@@ -35,5 +35,23 @@ public enum FillReducing {
     /**
      * TESTING ONLY. Doesn't change the input.
      */
-    IDENTITY
+    IDENTITY,
+    /**
+     * Symmetric Reverse Cuthill-McKee ordering.
+     *
+     * Graph-based permutation that tends to reduce matrix bandwidth/profile, often reducing fill-in and
+     * speeding up sparse factorizations. This variant sorts each node's neighbors by degree, which can
+     * improve ordering quality but adds noticeable preprocessing cost on high-degree graphs.
+     *
+     * Requirements: matrix must be square and structurally symmetric (pattern symmetric; values do not need
+     * to be symmetric).
+     */
+    SYMRCM,
+    /**
+     * Symmetric Reverse Cuthill-McKee ordering without neighbor sorting.
+     *
+     * Faster preprocessing (often near-linear in nnz) and often similar quality to {@link #SYMRCM}. Useful
+     * when permutation time matters on large problems.
+     */
+    SYMRCM_NO_SORT
 }

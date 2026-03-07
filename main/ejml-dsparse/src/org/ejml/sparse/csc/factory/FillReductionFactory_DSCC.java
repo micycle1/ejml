@@ -23,6 +23,7 @@ import org.ejml.data.DMatrixSparseCSC;
 import org.ejml.data.IGrowArray;
 import org.ejml.sparse.ComputePermutation;
 import org.ejml.sparse.FillReducing;
+import org.ejml.sparse.csc.misc.SymmetricRCM;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Random;
@@ -71,6 +72,36 @@ public class FillReductionFactory_DSCC {
                         pcol.reshape(m.numCols);
                         fillSequence(prow);
                         fillSequence(pcol);
+                    }
+                };
+
+            case SYMRCM:
+                return new ComputePermutation<>(true, true) {
+                    @Override
+                    @SuppressWarnings("NullAway") // constructor parameters ensures these are not null
+                    public void process(DMatrixSparseCSC m) {
+                        if (m.numRows != m.numCols) {
+                            throw new IllegalArgumentException("SymRCM requires a square (structurally symmetric) matrix");
+                        }
+                        prow.reshape(m.numRows);
+                        pcol.reshape(m.numCols);
+                        SymmetricRCM.compute(m, true, prow);
+                        System.arraycopy(prow.data, 0, pcol.data, 0, prow.length);
+                    }
+                };
+
+            case SYMRCM_NO_SORT:
+                return new ComputePermutation<>(true, true) {
+                    @Override
+                    @SuppressWarnings("NullAway") // constructor parameters ensures these are not null
+                    public void process(DMatrixSparseCSC m) {
+                        if (m.numRows != m.numCols) {
+                            throw new IllegalArgumentException("SymRCM requires a square (structurally symmetric) matrix");
+                        }
+                        prow.reshape(m.numRows);
+                        pcol.reshape(m.numCols);
+                        SymmetricRCM.compute(m, false, prow);
+                        System.arraycopy(prow.data, 0, pcol.data, 0, prow.length);
                     }
                 };
 
