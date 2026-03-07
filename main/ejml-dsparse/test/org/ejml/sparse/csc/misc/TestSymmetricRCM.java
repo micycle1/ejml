@@ -18,6 +18,7 @@
 
 package org.ejml.sparse.csc.misc;
 
+import org.ejml.EjmlStandardJUnit;
 import org.ejml.data.DMatrixSparseCSC;
 import org.ejml.data.DMatrixSparseTriplet;
 import org.ejml.data.IGrowArray;
@@ -31,7 +32,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestSymmetricRCM {
+public class TestSymmetricRCM extends EjmlStandardJUnit {
     @Test
     public void pathGraphProducesExpectedOrder() {
         DMatrixSparseCSC A = pathGraph(4);
