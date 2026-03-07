@@ -2,3 +2,4 @@ jdk:
   - openjdk17
 before_install:
   - sdk install java 17-open
+build: ./gradlew clean autogenerate -xtest assemble publishToMavenLocal
