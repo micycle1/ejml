@@ -3,4 +3,5 @@ jdk:
 before_install:
   - sdk install java 17-open
 install:
-  - ./gradlew clean autogenerate -xtest assemble publishToMavenLocal
+  - ./gradlew autogenerate --no-daemon
+  - ./gradlew -xtest assemble publishToMavenLocal --no-daemon
