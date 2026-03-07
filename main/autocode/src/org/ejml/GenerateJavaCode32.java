@@ -78,6 +78,8 @@ public class GenerateJavaCode32 extends GenerateCode32 {
         prefix32.add("GenericTestsFMatrix");
         prefix64.add("GenericTestsZMatrix");
         prefix32.add("GenericTestsCMatrix");
+        prefix64.add("SymmetricRCM");
+        prefix32.add("SymmetricRCM");
 
         int N = prefix64.size();
         for (int i = 0; i < N; i++) {
