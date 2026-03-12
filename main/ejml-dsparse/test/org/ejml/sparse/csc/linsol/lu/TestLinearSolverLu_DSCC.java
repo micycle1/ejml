@@ -19,8 +19,10 @@
 package org.ejml.sparse.csc.linsol.lu;
 
 import org.ejml.EjmlUnitTests;
+import org.ejml.UtilEjml;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.DMatrixSparseCSC;
+import org.ejml.data.DMatrixSparseTriplet;
 import org.ejml.interfaces.linsol.LinearSolverSparse;
 import org.ejml.ops.DConvertMatrixStruct;
 import org.ejml.sparse.ComputePermutation;
@@ -78,6 +80,68 @@ public class TestLinearSolverLu_DSCC extends GenericLinearSolverSparseTests_DSCC
         solver.solve(B, foundX);
 
         EjmlUnitTests.assertRelativeEquals(X, foundX, equalityTolerance);
+    }
+
+    @Test
+    public void solveDense_withRowAndColumnFillReduction() {
+        DMatrixSparseCSC A = createPermutationTestMatrix();
+        DMatrixRMaj X = create(A.numCols, 2);
+        DMatrixRMaj B = new DMatrixRMaj(A.numRows, X.numCols);
+        DMatrixRMaj foundX = new DMatrixRMaj(1, 1);
+
+        CommonOps_DSCC.mult(A, X, B);
+
+        LinearSolverSparse<DMatrixSparseCSC, DMatrixRMaj> solver =
+                new LinearSolverLu_DSCC(new LuUpLooking_DSCC(createPermutation()));
+
+        assertTrue(solver.setA(A));
+        solver.solve(B, foundX);
+
+        EjmlUnitTests.assertRelativeEquals(X, foundX, UtilEjml.TEST_F64);
+    }
+
+    @Test
+    public void solveSparse_withRowAndColumnFillReduction() {
+        DMatrixSparseCSC A = createPermutationTestMatrix();
+        DMatrixSparseCSC X = DConvertMatrixStruct.convert(create(A.numCols, 2), (DMatrixSparseCSC)null, 0.0);
+        DMatrixSparseCSC B = new DMatrixSparseCSC(1, 1, 1);
+        DMatrixSparseCSC foundX = new DMatrixSparseCSC(1, 1, 1);
+
+        CommonOps_DSCC.mult(A, X, B);
+
+        LinearSolverSparse<DMatrixSparseCSC, DMatrixRMaj> solver =
+                new LinearSolverLu_DSCC(new LuUpLooking_DSCC(createPermutation()));
+
+        assertTrue(solver.setA(A));
+        solver.solveSparse(B, foundX);
+
+        EjmlUnitTests.assertEquals(X, foundX, UtilEjml.TEST_F64);
+    }
+
+    private static ComputePermutation<DMatrixSparseCSC> createPermutation() {
+        return new ComputePermutation<>(true, true) {
+            @Override
+            public void process( DMatrixSparseCSC m ) {
+                prow.reshape(m.numRows);
+                pcol.reshape(m.numCols);
+
+                System.arraycopy(new int[]{1, 2, 0}, 0, prow.data, 0, m.numRows);
+                System.arraycopy(new int[]{2, 0, 1}, 0, pcol.data, 0, m.numCols);
+            }
+        };
+    }
+
+    private static DMatrixSparseCSC createPermutationTestMatrix() {
+        DMatrixSparseTriplet triplet = new DMatrixSparseTriplet(3, 3, 9);
+        triplet.addItem(0, 0, 4);
+        triplet.addItem(0, 1, 1);
+        triplet.addItem(1, 0, 2);
+        triplet.addItem(1, 1, 3);
+        triplet.addItem(1, 2, 5);
+        triplet.addItem(2, 0, 7);
+        triplet.addItem(2, 1, 1);
+        triplet.addItem(2, 2, 6);
+        return DConvertMatrixStruct.convert(triplet, (DMatrixSparseCSC)null);
     }
 
     // This matrix was found to cause the csparse algorithm to produce numerically unstable results due to poor

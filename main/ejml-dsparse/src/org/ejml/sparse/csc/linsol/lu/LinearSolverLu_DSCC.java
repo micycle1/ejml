@@ -42,6 +42,7 @@ public class LinearSolverLu_DSCC implements LinearSolverSparse<DMatrixSparseCSC,
 
     private final DGrowArray gx = new DGrowArray();
     private final DGrowArray gb = new DGrowArray();
+    private final IGrowArray gperm = new IGrowArray();
 
     DMatrixSparseCSC Bp = new DMatrixSparseCSC(1, 1, 1);
     DMatrixSparseCSC tmp = new DMatrixSparseCSC(1, 1, 1);
@@ -72,18 +73,34 @@ public class LinearSolverLu_DSCC implements LinearSolverSparse<DMatrixSparseCSC,
         DMatrixSparseCSC L = decomposition.getL();
         DMatrixSparseCSC U = decomposition.getU();
 
-        // these are row pivots
-        Bp.reshape(B.numRows, B.numCols, B.nz_length);
+        final int[] reducePinv = decomposition.getReducePermutationRowInv();
         int[] Pinv = decomposition.getPinv();
-        CommonOps_DSCC.permute(Pinv, B, null, Bp);
+        final int[] q = decomposition.isReduceFill() ? decomposition.getReducePermutation() : null;
+
+        DMatrixSparseCSC rhs = B;
+        if (reducePinv != null) {
+            Bp.reshape(B.numRows, B.numCols, B.nz_length);
+            CommonOps_DSCC.permute(reducePinv, B, null, Bp);
+            rhs = Bp;
+        }
+
+        tmp.reshape(B.numRows, B.numCols, rhs.nz_length);
+        CommonOps_DSCC.permute(Pinv, rhs, null, tmp);
 
         IGrowArray gw = decomposition.getGw();
         IGrowArray gw1 = decomposition.getGxi();
 
-        tmp.reshape(L.numRows, B.numCols, 1);
+        Bp.reshape(L.numRows, B.numCols, 1);
+        TriangularSolver_DSCC.solve(L, true, tmp, Bp, null, gx, gw, gw1);
 
-        TriangularSolver_DSCC.solve(L, true, Bp, tmp, null, gx, gw, gw1);
-        TriangularSolver_DSCC.solve(U, false, tmp, X, null, gx, gw, gw1);
+        if (q != null) {
+            TriangularSolver_DSCC.solve(U, false, Bp, tmp, null, gx, gw, gw1);
+            int[] qinv = UtilEjml.adjust(gperm, q.length);
+            CommonOps_DSCC.permutationInverse(q, qinv, q.length);
+            CommonOps_DSCC.permuteRowInv(qinv, tmp, X);
+        } else {
+            TriangularSolver_DSCC.solve(U, false, Bp, X, null, gx, gw, gw1);
+        }
     }
 
     @Override
@@ -110,21 +127,31 @@ public class LinearSolverLu_DSCC implements LinearSolverSparse<DMatrixSparseCSC,
 
         final boolean reduceFill = decomposition.isReduceFill();
         final int[] q = reduceFill ? decomposition.getReducePermutation() : null;
+        final int[] reducePinv = reduceFill ? decomposition.getReducePermutationRowInv() : null;
 
         // process each column in X and B individually
         for (int colX = 0; colX < X.numCols; colX++) {
             int index = colX;
             for (int i = 0; i < B.numRows; i++, index += X.numCols) b[i] = B.data[index];
 
-            CommonOps_DSCC.permuteInv(pinv, b, x, X.numRows);
-            TriangularSolver_DSCC.solveL(L, x);
-            TriangularSolver_DSCC.solveU(U, x);
+            double[] work = x;
+            if (reducePinv != null) {
+                CommonOps_DSCC.permuteInv(reducePinv, b, x, X.numRows);
+                CommonOps_DSCC.permuteInv(pinv, x, b, X.numRows);
+                work = b;
+            } else {
+                CommonOps_DSCC.permuteInv(pinv, b, x, X.numRows);
+            }
+
+            TriangularSolver_DSCC.solveL(L, work);
+            TriangularSolver_DSCC.solveU(U, work);
             double[] d;
             if (reduceFill) {
-                CommonOps_DSCC.permute(q, x, b, X.numRows);
-                d = b;
+                double[] output = work == x ? b : x;
+                CommonOps_DSCC.permute(q, work, output, X.numRows);
+                d = output;
             } else {
-                d = x;
+                d = work;
             }
             index = colX;
             for (int i = 0; i < X.numRows; i++, index += X.numCols) X.data[index] = d[i];

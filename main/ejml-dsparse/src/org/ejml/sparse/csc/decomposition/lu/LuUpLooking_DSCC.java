@@ -93,7 +93,7 @@ public class LuUpLooking_DSCC
     private boolean performLU( DMatrixSparseCSC A ) {
         int m = A.numRows;
         int n = A.numCols;
-        int[] q = applyReduce.getArrayP();
+        int[] q = applyReduce.getArrayQ();
 
         int[] w = UtilEjml.adjust(gw, m*2, m);
 
@@ -259,10 +259,14 @@ public class LuUpLooking_DSCC
     }
 
     public int[] getReducePermutation() {
-        int[] ret = applyReduce.getArrayP();
+        int[] ret = applyReduce.getArrayQ();
         if (ret == null)
             throw new RuntimeException("Check to see if there is any fill reduce ordering to apply first");
         return ret;
+    }
+
+    public @Nullable int[] getReducePermutationRowInv() {
+        return applyReduce.getArrayPinv();
     }
 
     @Override
