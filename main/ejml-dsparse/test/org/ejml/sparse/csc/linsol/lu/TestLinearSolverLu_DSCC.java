@@ -40,6 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Peter Abeles
  */
 public class TestLinearSolverLu_DSCC extends GenericLinearSolverSparseTests_DSCC {
+    private static final int[] ROW_FILL_PERMUTATION = new int[]{1, 2, 0};
+    private static final int[] COLUMN_FILL_PERMUTATION = new int[]{2, 0, 1};
+    private static final int PERMUTATION_TEST_NZ = 8;
 
     public TestLinearSolverLu_DSCC() {
         canDecomposeZeros = false;
@@ -125,14 +128,14 @@ public class TestLinearSolverLu_DSCC extends GenericLinearSolverSparseTests_DSCC
                 prow.reshape(m.numRows);
                 pcol.reshape(m.numCols);
 
-                System.arraycopy(new int[]{1, 2, 0}, 0, prow.data, 0, m.numRows);
-                System.arraycopy(new int[]{2, 0, 1}, 0, pcol.data, 0, m.numCols);
+                System.arraycopy(ROW_FILL_PERMUTATION, 0, prow.data, 0, m.numRows);
+                System.arraycopy(COLUMN_FILL_PERMUTATION, 0, pcol.data, 0, m.numCols);
             }
         };
     }
 
     private static DMatrixSparseCSC createPermutationTestMatrix() {
-        DMatrixSparseTriplet triplet = new DMatrixSparseTriplet(3, 3, 9);
+        DMatrixSparseTriplet triplet = new DMatrixSparseTriplet(3, 3, PERMUTATION_TEST_NZ);
         triplet.addItem(0, 0, 4);
         triplet.addItem(0, 1, 1);
         triplet.addItem(1, 0, 2);
